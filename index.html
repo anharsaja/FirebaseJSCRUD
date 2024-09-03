@@ -1,9 +1,10 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Firebase realtime database CRUD example</title>
+  <title>Firebase Realtime Database CRUD Example</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
 </head>
 
@@ -12,11 +13,11 @@
   <div class='container'>
     <div class='header'>
       <img src="logo.png" width="100%" alt="">
-      <h4>Real-Time Database CRUD example</h4>
+      <h4>Real-Time Database CRUD Example</h4>
     </div>
     <br />
     <form id='reviewForm'>
-      <input type="hidden" id='hiddenId' />     
+      <input type="hidden" id='hiddenId' />
       <div class="input-field">
         <label for="fullName">Full Name</label>
         <input type="text" id='fullName' />
@@ -39,11 +40,155 @@
   </div>
 
   <!-- JavaScript imports -->
-  <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-database.js"></script>  
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, set, remove } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBpnOVLCxVSuCRXWkz7pNdRCtT4yDLTP28",
+      authDomain: "anharsaja-14e11.firebaseapp.com",
+      databaseURL: "https://anharsaja-14e11-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "anharsaja-14e11",
+      storageBucket: "anharsaja-14e11.appspot.com",
+      messagingSenderId: "443197906435",
+      appId: "1:443197906435:web:23938b6f7b613786323836",
+      measurementId: "G-DFN6K6Z695"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const reviewsRef = ref(db, "reviews");
+
+    const reviews = document.getElementById("reviews");
+    const reviewForm = document.getElementById("reviewForm");
+
+    setupEventHandlers();
+
+    function setupEventHandlers() {
+      // User clicks the submit button (create or update)
+      reviewForm.addEventListener("submit", e => {
+        e.preventDefault(); // Prevent page reload
+        handleSubmit();
+        Materialize.updateTextFields();
+      });
+
+      // User updates/deletes a particular review
+      reviews.addEventListener("click", e => {
+        if (e.target.classList.contains("edit")) {
+          updateReview(e);
+        }
+        if (e.target.classList.contains("delete")) {
+          deleteReview(e);
+        }
+      });
+
+      // Firebase events
+      onChildAdded(reviewsRef, data => {
+        readReviews(data);
+      });
+
+      onChildChanged(reviewsRef, data => {
+        var reviewNode = document.getElementById(data.key);
+        reviewNode.innerHTML = reviewTemplate(data.val());
+      });
+
+      onChildRemoved(reviewsRef, data => {
+        var reviewNode = document.getElementById(data.key);
+        reviewNode.parentNode.removeChild(reviewNode);
+      });
+    }
+
+    // CRUD operations
+    function handleSubmit() {
+      var fullName = document.getElementById("fullName").value.trim();
+      var message = document.getElementById("message").value.trim();
+      var tags = document.getElementById("tags").value.trim();
+      var hiddenId = document.getElementById("hiddenId").value;
+
+      // Perform simple client-side validation
+      if (!fullName || !message || !tags) return;
+
+      var id = hiddenId || Date.now().toString();
+
+      // Create new node / update existing node in Firebase    
+      set(ref(db, "reviews/" + id), {
+        fullName: fullName,
+        message: message,
+        tags: tags,
+        createdAt: Date.now() // Use JavaScript's timestamp
+      });
+
+      clearForm();
+    }
+
+    function readReviews(data) {
+      var li = document.createElement("li");
+      li.id = data.key;
+      li.innerHTML = reviewTemplate(data.val());
+      reviews.appendChild(li);
+    }
+
+    function updateReview(e) {
+      var reviewNode = e.target.closest("li");
+      var fullName = reviewNode.querySelector(".fullName").innerText;
+      var message = reviewNode.querySelector(".message").innerText;
+      var tags = reviewNode.querySelector(".tags").innerText;
+
+      document.getElementById("fullName").value = fullName;
+      document.getElementById("message").value = message;
+      document.getElementById("tags").value = tags;
+      document.getElementById("hiddenId").value = reviewNode.id;
+
+      Materialize.updateTextFields();
+    }
+
+    function deleteReview(e) {
+      var reviewNode = e.target.closest("li");
+      var id = reviewNode.id;
+
+      remove(ref(db, "reviews/" + id)); // Delete node at Firebase
+      clearForm();
+    }
+
+    function reviewTemplate({ fullName, message, tags, createdAt }) {
+      var createdAtFormatted = new Date(createdAt).toLocaleString();
+
+      return `
+        <div>
+          <label>Full Name:</label>
+          <label class="fullName"><strong>${fullName}</strong></label>
+        </div>
+        <div>
+          <label>Message:</label>
+          <label class="message">${message}</label>
+        </div>
+        <div>
+          <label>Tags:</label>
+          <label class="tags">${tags}</label>
+        </div>
+        <div>
+          <label>Created:</label>
+          <label class="createdAt">${createdAtFormatted}</label>
+        </div>
+        <br>
+        <button class="waves-effect waves-light btn delete">Delete</button>
+        <button class="waves-effect waves-light btn edit">Edit</button>
+        <br><br><br><br>
+      `;
+    }
+
+    // Utility method to clear the form
+    function clearForm() {
+      document.getElementById("fullName").value = "";
+      document.getElementById("message").value = "";
+      document.getElementById("tags").value = "";
+      document.getElementById("hiddenId").value = "";
+    }
+  </script>
+
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-  <script src="app.js"></script>
 </body>
 
 </html>

@@ -1,11 +1,11 @@
 var config = {
     apiKey: "AIzaSyCxMufNl3wbx8sYyPRF2NkxGi_a0xOtoZ0",
-  authDomain: "fir-9-b4d92.firebaseapp.com",
-  databaseURL: "https://fir-9-b4d92-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "fir-9-b4d92",
-  storageBucket: "fir-9-b4d92.appspot.com",
-  messagingSenderId: "746921210041",
-  appId: "1:746921210041:web:a71b760c6136e10db02b68"
+    authDomain: "fir-9-b4d92.firebaseapp.com",
+    databaseURL: "https://fir-9-b4d92-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "fir-9-b4d92",
+    storageBucket: "fir-9-b4d92.appspot.com",
+    messagingSenderId: "746921210041",
+    appId: "1:746921210041:web:a71b760c6136e10db02b68"
 };
 
 //initialize database and global db ref
