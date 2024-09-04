@@ -18,23 +18,37 @@
     <br />
     <form id='reviewForm'>
       <input type="hidden" id='hiddenId' />
+
       <div class="input-field">
-        <label for="fullName">Full Name</label>
-        <input type="text" id='fullName' />
+        <label for="powerconsumtion">Power Consumption</label>
+        <input type="number" id='powerconsumtion' />
       </div>
       <br />
+
       <div class="input-field">
-        <label for="message">Review Contents</label>
-        <textarea class="materialize-textarea" id='message'></textarea>
-      </div>
-      <div class="input-field">
-        <label for="tags">Tags</label>
-        <input type="text" id='tags' />
+        <label for="tanggal"></label>
+        <input type="date" id='tanggal' />
       </div>
       <br />
+
+      <div class="input-field">
+        <label for="waktumati"></label>
+        <input type="time" id='waktumati' step="1" />
+      </div>
       <br />
-      <button class="waves-effect waves-light btn" type='submit'>Add / Update review</button>
+
+      <div class="input-field">
+        <label for="waktunyala"></label>
+        <input type="time" id='waktunyala' step="1" />
+      </div>
+      <br />
+
+      <button class="waves-effect waves-light btn" type='submit'>Add / Update Data</button>
+      <button class="waves-effect waves-light btn" id="toggleSort">Sort by Power Consumption</button>
+
     </form>
+    <br>
+
     <br /><br /><br />
     <ul id='reviews'></ul>
   </div>
@@ -43,7 +57,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, set, remove } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+    import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBpnOVLCxVSuCRXWkz7pNdRCtT4yDLTP28",
@@ -58,10 +72,15 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const reviewsRef = ref(db, "reviews");
+    const reviewsRef = ref(db, "Lampu1/DataLampu");
 
     const reviews = document.getElementById("reviews");
     const reviewForm = document.getElementById("reviewForm");
+    const toggleSortButton = document.getElementById("toggleSort");
+
+    let reviewsArray = [];
+    let originalArray = [];
+    let isSorted = false; // Track the sorting state
 
     setupEventHandlers();
 
@@ -71,6 +90,19 @@
         e.preventDefault(); // Prevent page reload
         handleSubmit();
         Materialize.updateTextFields();
+      });
+
+      // User clicks the sort toggle button
+      toggleSortButton.addEventListener("click", () => {
+        if (isSorted) {
+          displayReviews(originalArray); // Display in original order
+          console.log(originalArray);
+          toggleSortButton.textContent = 'Sort by Power Consumption';
+        } else {
+          sortReviewsByPowerConsumption();
+          toggleSortButton.textContent = 'Show Original Data';
+        }
+        isSorted = !isSorted;
       });
 
       // User updates/deletes a particular review
@@ -84,108 +116,129 @@
       });
 
       // Firebase events
-      onChildAdded(reviewsRef, data => {
-        readReviews(data);
-      });
-
-      onChildChanged(reviewsRef, data => {
-        var reviewNode = document.getElementById(data.key);
-        reviewNode.innerHTML = reviewTemplate(data.val());
-      });
-
-      onChildRemoved(reviewsRef, data => {
-        var reviewNode = document.getElementById(data.key);
-        reviewNode.parentNode.removeChild(reviewNode);
+      onValue(reviewsRef, snapshot => {
+        reviewsArray = [];
+        snapshot.forEach(childSnapshot => {
+          reviewsArray.push({
+            key: childSnapshot.key,
+            value: childSnapshot.val()
+          });
+          originalArray.push({
+            key: childSnapshot.key,
+            value: childSnapshot.val()
+          });
+        });
+        // Display reviews initially
+        displayReviews(reviewsArray);
       });
     }
 
-    // CRUD operations
     function handleSubmit() {
-      var fullName = document.getElementById("fullName").value.trim();
-      var message = document.getElementById("message").value.trim();
-      var tags = document.getElementById("tags").value.trim();
-      var hiddenId = document.getElementById("hiddenId").value;
+      var powerconsumtion = document.getElementById("powerconsumtion").value.trim();
+      var tanggalInput = document.getElementById("tanggal").value;
+      var waktumatiInput = document.getElementById("waktumati").value;
+      var waktunyalaInput = document.getElementById("waktunyala").value;
 
       // Perform simple client-side validation
-      if (!fullName || !message || !tags) return;
+      if (!powerconsumtion || !tanggalInput || !waktumatiInput || !waktunyalaInput) return;
 
-      var id = hiddenId || Date.now().toString();
+      // Format Tanggal menjadi yyyy-MM-dd
+      var tanggal = formatDateToReverse(tanggalInput);
 
-      // Create new node / update existing node in Firebase    
-      set(ref(db, "reviews/" + id), {
-        fullName: fullName,
-        message: message,
-        tags: tags,
-        createdAt: Date.now() // Use JavaScript's timestamp
+      var waktumati = formatTimeTo12Hour(waktumatiInput);
+      var waktunyala = formatTimeTo12Hour(waktunyalaInput);
+
+      // Membuat Node Baru di Firebase
+      set(ref(db, "Lampu1/DataLampu/" + tanggal), {
+        PowerConsumption: parseInt(powerconsumtion),
+        Tanggal: tanggal.split('-').reverse().join('-'), // Mengubah kembali ke dd-MM-yyyy untuk tampilan
+        WaktuMati: waktumati,
+        WaktuNyala: waktunyala
       });
 
       clearForm();
     }
 
-    function readReviews(data) {
-      var li = document.createElement("li");
-      li.id = data.key;
-      li.innerHTML = reviewTemplate(data.val());
-      reviews.appendChild(li);
+    function formatTimeTo12Hour(time) {
+      const [hour, minute, second] = time.split(':');
+      let period = 'AM';
+      let hour12 = parseInt(hour);
+
+      if (hour12 >= 12) {
+        period = 'PM';
+        if (hour12 > 12) hour12 -= 12;
+      }
+      if (hour12 === 0) hour12 = 12;
+
+      return `${hour12}:${minute}:${second} ${period}`;
     }
 
-    function updateReview(e) {
-      var reviewNode = e.target.closest("li");
-      var fullName = reviewNode.querySelector(".fullName").innerText;
-      var message = reviewNode.querySelector(".message").innerText;
-      var tags = reviewNode.querySelector(".tags").innerText;
+    function formatDateToReverse(date) {
+      const [year, month, day] = date.split('-');
+      return `${year}-${month}-${day}`;
+    }
 
-      document.getElementById("fullName").value = fullName;
-      document.getElementById("message").value = message;
-      document.getElementById("tags").value = tags;
-      document.getElementById("hiddenId").value = reviewNode.id;
+    function displayReviews(reviewsArray) {
+      reviews.innerHTML = ''; // Clear existing reviews
+      reviewsArray.forEach(review => {
+        var li = document.createElement("li");
+        li.id = review.key;
+        li.innerHTML = reviewTemplate(review.value);
+        reviews.appendChild(li);
+      });
+    }
 
-      Materialize.updateTextFields();
+    function sortReviewsByPowerConsumption() {
+      // Sort reviewsArray by PowerConsumption (ascending)
+      reviewsArray.sort((a, b) => a.value.PowerConsumption - b.value.PowerConsumption);
+      // Display sorted reviews
+      displayReviews(reviewsArray);
     }
 
     function deleteReview(e) {
       var reviewNode = e.target.closest("li");
       var id = reviewNode.id;
 
-      remove(ref(db, "reviews/" + id)); // Delete node at Firebase
+      remove(ref(db, "Lampu1/DataLampu/" + id)); // Delete node at Firebase
       clearForm();
     }
 
-    function reviewTemplate({ fullName, message, tags, createdAt }) {
-      var createdAtFormatted = new Date(createdAt).toLocaleString();
-
+    function reviewTemplate({ PowerConsumption, Tanggal, WaktuMati, WaktuNyala }) {
       return `
-        <div>
-          <label>Full Name:</label>
-          <label class="fullName"><strong>${fullName}</strong></label>
-        </div>
-        <div>
-          <label>Message:</label>
-          <label class="message">${message}</label>
-        </div>
-        <div>
-          <label>Tags:</label>
-          <label class="tags">${tags}</label>
-        </div>
-        <div>
-          <label>Created:</label>
-          <label class="createdAt">${createdAtFormatted}</label>
-        </div>
-        <br>
-        <button class="waves-effect waves-light btn delete">Delete</button>
-        <button class="waves-effect waves-light btn edit">Edit</button>
-        <br><br><br><br>
-      `;
+      <div>
+        <label>Power Consumption:</label>
+        <label class="PowerConsumption"><strong>${PowerConsumption}</strong></label>
+      </div>
+      <div>
+        <label>Tanggal:</label>
+        <label class="tanggal">${Tanggal}</label>
+      </div>
+      <div>
+        <label>Waktu Mati:</label>
+        <label class="WaktuMati">${WaktuMati}</label>
+      </div>
+      <div>
+        <label>Waktu Nyala:</label>
+        <label class="WaktuNyala">${WaktuNyala}</label>
+      </div>
+      <br>
+      <button class="waves-effect waves-light btn delete">Delete</button>
+      <button class="waves-effect waves-light btn edit">Edit</button>
+      <br><br><br><br>
+    `;
     }
 
     // Utility method to clear the form
     function clearForm() {
-      document.getElementById("fullName").value = "";
-      document.getElementById("message").value = "";
-      document.getElementById("tags").value = "";
+      document.getElementById("powerconsumtion").value = "";
+      document.getElementById("tanggal").value = "";
+      document.getElementById("waktumati").value = "";
+      document.getElementById("waktunyala").value = "";
       document.getElementById("hiddenId").value = "";
     }
   </script>
+
+
 
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
