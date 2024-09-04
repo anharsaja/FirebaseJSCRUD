@@ -6,6 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Firebase Realtime Database CRUD Example</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+  <style>
+    ul {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    li {
+      border: 0.5px solid black;
+      padding: 20px;
+      margin: 10px;
+      border-radius: 8px;
+    }
+
+    li,
+    label {
+      font-size: 17px;
+    }
+  </style>
 </head>
 
 <body>
@@ -56,18 +74,20 @@
   <!-- JavaScript imports -->
 
   <script type="module">
+
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBpnOVLCxVSuCRXWkz7pNdRCtT4yDLTP28",
-      authDomain: "anharsaja-14e11.firebaseapp.com",
-      databaseURL: "https://anharsaja-14e11-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "anharsaja-14e11",
-      storageBucket: "anharsaja-14e11.appspot.com",
-      messagingSenderId: "443197906435",
-      appId: "1:443197906435:web:23938b6f7b613786323836",
-      measurementId: "G-DFN6K6Z695"
+      apiKey: "AIzaSyCgj0qVAcdEqCaqOJux-UB7i1FFvVG9c60",
+      authDomain: "kosan-zidane.firebaseapp.com",
+      databaseURL: "https://kosan-zidane-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "kosan-zidane",
+      storageBucket: "kosan-zidane.appspot.com",
+      messagingSenderId: "362734382836",
+      appId: "1:362734382836:web:eb5f2e65c21cc49fdd38a1",
+      measurementId: "G-PY6BZYHC51"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -206,6 +226,10 @@
     function reviewTemplate({ PowerConsumption, Tanggal, WaktuMati, WaktuNyala }) {
       return `
       <div>
+        <label>No:</label>
+        <label class="Number"><strong>${PowerConsumption}</strong></label>
+      </div>
+      <div>
         <label>Power Consumption:</label>
         <label class="PowerConsumption"><strong>${PowerConsumption}</strong></label>
       </div>
@@ -223,10 +247,12 @@
       </div>
       <br>
       <button class="waves-effect waves-light btn delete">Delete</button>
-      <button class="waves-effect waves-light btn edit">Edit</button>
       <br><br><br><br>
     `;
     }
+
+    // <button class="waves-effect waves-light btn edit">Edit</button>
+
 
     // Utility method to clear the form
     function clearForm() {
