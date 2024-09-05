@@ -116,7 +116,6 @@
       toggleSortButton.addEventListener("click", () => {
         if (isSorted) {
           displayReviews(originalArray); // Display in original order
-          console.log(originalArray);
           toggleSortButton.textContent = 'Sort by Power Consumption';
         } else {
           sortReviewsByPowerConsumption();
